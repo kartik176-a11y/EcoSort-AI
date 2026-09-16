@@ -1,0 +1,37 @@
+# SustainAI local knowledge base. General information only; local rules take priority.
+
+[Plastic]
+Reduce single-use plastic and prefer reusable alternatives. Empty and clean accepted containers where practical. Not all plastic packaging is accepted everywhere.
+
+[Paper and Cardboard]
+Keep paper and cardboard dry and reasonably clean. Reuse boxes before recycling. Food-soiled material may need another route depending on local guidance.
+
+[Glass]
+Bottles and jars may be collected separately. Handle broken glass carefully. Ceramics and heat-resistant cookware may have different requirements.
+
+[Metal]
+Aluminium and steel containers are often recyclable. Empty and rinse them where practical. Recycling helps preserve mineral resources.
+
+[Organic waste]
+Food scraps and fruit or vegetable peels can often be composted or collected as organic waste. Keep organics separate from dry recyclables.
+
+[E-waste and Electronics]
+Phones, laptops, chargers, headphones, and cables should not normally go into ordinary household bins. Use an authorized e-waste collection or take-back option where available.
+
+[Batteries]
+Keep batteries out of ordinary waste. Do not burn, crush, open, or mix them. Follow local battery collection guidance.
+
+[Textiles]
+Repair, share, donate, or reuse clothing before disposal. Verify what local textile programs accept.
+
+[Hazardous waste]
+Paints, solvents, pesticides, and strong chemicals should not be poured into drains, burned, or mixed with normal waste. Follow local hazardous-waste instructions.
+
+[Reduction and Reuse]
+Prevent waste by buying only what is needed, choosing durable products, repairing items, and selecting reusable options.
+
+[Recycling and Composting]
+Recycling works best when accepted materials are sorted correctly and free of contamination. Composting turns suitable organic material into a soil amendment. Local acceptance rules vary.
+
+[Responsible consumption]
+Consider durability, repairability, packaging, and end-of-life options before buying.
