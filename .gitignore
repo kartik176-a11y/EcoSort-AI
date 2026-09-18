@@ -1,10 +1,25 @@
+# Python bytecode
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
 .venv/
 venv/
 env/
+
+# Environment files
 .env
-.streamlit/secrets.toml
+.env.*
+
+# Streamlit secrets
+.streamlit/
+
+# OS metadata
 .DS_Store
+Thumbs.db
+
+# IDE settings
 .vscode/
 .idea/

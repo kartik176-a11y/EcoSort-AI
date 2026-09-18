@@ -1,0 +1,88 @@
+import os
+from pathlib import Path
+
+import requests
+
+
+class GraniteAdapter:
+    def __init__(self, prompt_path: str | None = None):
+        base_dir = Path(__file__).resolve().parent.parent
+        self.prompt_path = prompt_path or (base_dir / "prompts" / "advisory_prompt.txt")
+
+    def _load_system_prompt(self) -> str:
+        try:
+            return self.prompt_path.read_text(encoding="utf-8")
+        except Exception:
+            return (
+                "Use the retrieved context only, do not invent rules, and if evidence is insufficient, say that the information is unavailable. "
+                "Give concise guidance and mention the source."
+            )
+
+    def _fallback_response(self, item: str, category: str, reason: str, context: str, demo_mode: bool = True) -> dict:
+        if not context or "Reliable guidance was not found" in context:
+            answer = (
+                "Reliable guidance was not found in the current knowledge base. Please verify disposal instructions with the local municipal authority."
+            )
+        else:
+            answer = (
+                f"{item} is likely {category}. {reason} Based on the retrieved guidance, keep it in the appropriate segregation stream and avoid mixing hazardous items with ordinary waste. "
+                "If the item is special, battery, or electronic waste, use a designated collection or authorized local facility."
+            )
+
+        demo_label = "Demo/reference mode" if demo_mode else "Local grounded fallback"
+        recommendation = (
+            "Segregate appropriately and check local instructions if the item is hazardous, e-waste, or uncertain."
+        )
+
+        if category == "Wet/Biodegradable":
+            recommendation = "Place it in the wet or organic waste stream for composting or municipal collection."
+        elif category == "Dry/Recyclable":
+            recommendation = "Rinse if needed and send it to the dry recyclable stream or collection bin."
+        elif category == "E-waste":
+            recommendation = "Do not place it in ordinary household waste. Use an e-waste collection route or authorized facility."
+        elif category == "Hazardous/Special waste":
+            recommendation = "Do not put it in ordinary household waste. Use a dedicated hazardous-waste route or local authority guidance."
+        elif category == "Other/Uncertain":
+            recommendation = "Please verify with the local municipal authority before disposal."
+
+        return {
+            "answer": answer,
+            "recommendation": recommendation,
+            "demo_label": demo_label,
+        }
+
+    def generate_advisory(self, item: str, category: str, reason: str, context: str, demo_mode: bool = True) -> dict:
+        if not (os.getenv("IBM_GRANITE_ENDPOINT") and os.getenv("IBM_API_KEY")):
+            return self._fallback_response(item, category, reason, context, demo_mode=demo_mode)
+
+        system_prompt = self._load_system_prompt()
+        payload = {
+            "model": os.getenv("IBM_GRANITE_MODEL", "ibm-granite"),
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Waste item: {item}\nCategory: {category}\nReason: {reason}\nContext: {context}"},
+            ],
+        }
+
+        try:
+            response = requests.post(
+                os.environ["IBM_GRANITE_ENDPOINT"],
+                json=payload,
+                headers={"Authorization": f"Bearer {os.environ['IBM_API_KEY']}", "Content-Type": "application/json"},
+                timeout=25,
+            )
+            response.raise_for_status()
+            data = response.json()
+            if data.get("choices"):
+                content = data["choices"][0].get("message", {}).get("content")
+                if content:
+                    return {
+                        "answer": content,
+                        "recommendation": "Follow the guidance above and verify the item with local municipal instructions if it is hazardous or uncertain.",
+                        "demo_label": "Granite-generated answer",
+                    }
+        except Exception:
+            pass
+
+        return self._fallback_response(item, category, reason, context, demo_mode=demo_mode)
+
