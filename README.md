@@ -1,4 +1,5 @@
-# EcoSort AI — Smart Waste Segregation & Disposal Assistant
+# :
+🌱 ♻️ EcoSort AI 🌍 : AI — Smart Waste Segregation & Disposal Assistant
 
 ## Problem statement
 
@@ -204,4 +205,6 @@ Example 4:
 
 ## Author and internship context
 
-This project is designed for the 1M1B AI for Sustainability Virtual Internship, with a focus on the SDG goals and a simple, local prototype suitable for a short demonstration.
+This project is designed for the 1M1B AI for Sustainability Virtual Internship, with a focus on the SDG goals and a simple, local prototype suitable for a short demonstration. 
+
+Prepared by : V.Karthik
