@@ -1,4 +1,4 @@
-# :🌱 ♻️ EcoSort AI 🌍 : AI — Smart Waste Segregation & Disposal Assistant
+# 🌱 ♻️ EcoSort AI 🌍 — Smart Waste Segregation & Disposal Assistant
 
 ## Problem statement
 
@@ -22,29 +22,78 @@ Visakhapatnam is growing rapidly, and sustainable urban waste management is impo
 
 ## Solution
 
-EcoSort AI is a simple Streamlit prototype that helps citizens classify common household waste items, retrieve relevant local guidance from a small grounded knowledge base, and obtain a concise recommendation. It uses a transparent multi-stage workflow with waste classification, retrieval, and advisory generation.
+EcoSort AI is an intelligent Streamlit application that helps citizens classify household waste items using **text descriptions or images**, retrieve relevant local guidance from a grounded knowledge base, and obtain a concise, responsible recommendation. It uses a transparent multi-stage workflow with waste classification, retrieval-augmented generation (RAG), and LLM advisory.
 
 ## Features
 
-- Text-based waste classification
-- Optional image upload with preview-only handling
-- Deterministic categorization for common household items
-- RAG-style retrieval using local documents and demo guidance
+### 🆕 Image Classification (NEW!)
+- **Real waste image recognition** using InceptionV3 neural network
+- Upload photos of waste items for automatic classification
+- Top-5 prediction display for transparency
+- Maps ImageNet classes to EcoSort waste categories
+- Graceful fallback to text classification when TensorFlow unavailable
+
+### Core Features
+- Text-based waste classification with keyword matching
+- RAG-style retrieval using local documents and guidance
 - LLM-backed generation through a configurable Granite-compatible interface
 - Grounded recommendation with visible source references
 - Responsible AI warnings for uncertainty and hazardous waste
 - Demo mode when external APIs or documents are unavailable
 
+### Waste Categories
+1. **Wet/Biodegradable** — Food waste, organic matter
+2. **Dry/Recyclable** — Paper, plastic, glass, metal
+3. **Hazardous/Special waste** — Batteries, chemicals, paint
+4. **E-waste** — Electronics, phones, laptops
+5. **Other/Uncertain** — Items requiring verification
+
 ## AI architecture
 
-User Input
-→ Input Analysis
-→ Waste Classification
-→ RAG Retrieval
-→ Granite / LLM Generation
-→ Source-Grounded Recommendation
+```
+User Input (Text/Image)
+      ↓
+IMAGE CLASSIFICATION (InceptionV3)
+   OR TEXT CLASSIFICATION
+      ↓
+WASTE CATEGORY DETECTION
+      ↓
+RAG RETRIEVAL
+      ↓
+GRANITE / LLM GENERATION
+      ↓
+SOURCE-GROUNDED RECOMMENDATION
+      ↓
+RESPONSIBLE AI DISCLAIMER
+```
 
-The app keeps the classification deterministic and constrains the final answer to the retrieved evidence, avoiding unsupported municipal claims.
+The app keeps the classification evidence-based and constrains the final answer to retrieved context, avoiding unsupported municipal claims.
+
+## Image Classification Workflow
+
+```
+UPLOAD IMAGE
+      ↓
+IMAGE PREPROCESSING
+  - Resize to 299×299
+  - RGB conversion
+  - InceptionV3 normalization
+      ↓
+INCEPTIONV3 PREDICTION
+  - Trained on ImageNet
+  - Top-5 object classes
+      ↓
+CATEGORY MAPPING
+  - Map detected objects to waste categories
+  - Example: "plastic_bottle" → Dry/Recyclable
+  - Example: "banana" → Wet/Biodegradable
+      ↓
+RAG RETRIEVAL + LLM GUIDANCE
+      ↓
+DISPOSAL RECOMMENDATION
+```
+
+**Note:** Image classification uses pre-trained InceptionV3 weights from TensorFlow/Keras. No large model files are committed to the repository.
 
 ## RAG workflow
 
@@ -63,12 +112,18 @@ If the system cannot use an external vector database, it falls back to a local d
 
 The workflow is intentionally transparent and sequential:
 
-1. Classification Agent
-   - Determines the likely category for a waste item.
-2. Retrieval Agent
-   - Finds relevant official or reference guidance.
-3. Advisory Agent
-   - Produces a concise, source-grounded answer for the user.
+1. **Classification Agent**
+   - Image classification (if image uploaded and TensorFlow available)
+   - Text classification (if text provided or image classification unavailable)
+   - Determines the likely category for a waste item
+   
+2. **Retrieval Agent**
+   - Finds relevant official or reference guidance
+   - Uses detected item name for semantic search
+   
+3. **Advisory Agent**
+   - Produces a concise, source-grounded answer for the user
+   - Uses Granite LLM or local fallback
 
 ## IBM Granite role
 
@@ -91,26 +146,36 @@ The app is designed to communicate uncertainty instead of guessing. It displays 
 - incomplete evidence
 - local municipal verification requirements
 - image-upload privacy expectations
+- model limitations and confidence scores
+
+**Image Classification Notes:**
+- InceptionV3 is trained on general objects (ImageNet), not waste-specific datasets
+- Always verify critical decisions (hazardous, e-waste) with local authorities
+- Images are processed locally and not stored by default
+- Top-5 predictions shown for transparency
 
 ## Technology stack
 
-- Python
-- Streamlit
-- PyPDF
-- Requests
-- Local demo knowledge base / retrieval layer
-- Optional Granite-compatible LLM integration via environment variables
+- **Python** — Core language
+- **Streamlit** — Web interface
+- **TensorFlow/Keras** — Image classification (InceptionV3)
+- **Pillow** — Image processing
+- **NumPy** — Array operations
+- **PyPDF** — PDF document parsing
+- **Requests** — HTTP client for LLM APIs
+- **Local RAG** — Knowledge retrieval layer
+- **IBM Granite** — Optional LLM integration
 
 ## Project structure
 
 ```text
 EcoSort-AI/
-├── app.py
+├── app.py                          # Main Streamlit application
 ├── README.md
-├── requirements.txt
+├── requirements.txt                # Dependencies (includes TensorFlow)
 ├── .env.example
 ├── .gitignore
-├── data/
+├── data/                           # Knowledge base documents
 │   ├── README.md
 │   ├── official_guidance.txt
 │   ├── gvms/
@@ -119,16 +184,19 @@ EcoSort-AI/
 │       └── swachh_bharat_guidance.txt
 ├── docs/
 │   ├── architecture.md
-│   └── responsible_ai.md
+│   ├── responsible_ai.md
+│   └── image_classification.md     # 🆕 Image classification docs
 ├── prompts/
 │   └── advisory_prompt.txt
 ├── screenshots/
 │   └── README.md
 ├── src/
 │   ├── __init__.py
-│   ├── agents.py
-│   ├── classifier.py
+│   ├── agents.py                   # ✏️ Updated: image + text workflow
+│   ├── classifier.py               # Text classification
+│   ├── image_classifier.py         # 🆕 Image classification module
 │   ├── granite.py
+│   ├── llm.py
 │   ├── rag.py
 │   └── utils.py
 └── .venv/
@@ -136,13 +204,29 @@ EcoSort-AI/
 
 ## Installation
 
+### Full Installation (with image classification)
+
 ```bash
 git clone https://github.com/kartik176-a11y/EcoSort-AI.git
 cd EcoSort-AI
+git checkout feature/waste-image-classification  # Or main after merge
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+**Note:** 
+- TensorFlow download is ~500 MB
+- First run downloads InceptionV3 weights (~154 MB) automatically
+- Use `tensorflow-cpu` for smaller install size (CPU-only)
+
+### Minimal Installation (text-only)
+
+```bash
+pip install streamlit requests pypdf
+```
+
+The app will work in text-classification mode. Image classification will show as unavailable.
 
 ## Environment variables
 
@@ -166,9 +250,17 @@ If these are not set, the app automatically enters demo mode and still works wit
 streamlit run app.py
 ```
 
-Then open the local Streamlit URL shown in the terminal.
+Then open the local Streamlit URL shown in the terminal (typically `http://localhost:8501`).
+
+### First Run Notes
+
+- TensorFlow will download InceptionV3 weights on first image classification (one-time)
+- Initial model loading takes 5-10 seconds
+- Subsequent classifications are faster (model cached in memory)
 
 ## Example inputs and expected output
+
+### Text Classification Examples
 
 Example 1:
 - Input: `banana peel`
@@ -184,26 +276,152 @@ Example 3:
 
 Example 4:
 - Input: `used battery`
-- Expected: Hazardous/Special waste or E-waste, with a warning not to place it in ordinary household waste
+- Expected: Hazardous/Special waste, with warning
+
+Example 5:
+- Input: `old mobile phone`
+- Expected: E-waste
+
+### Image Classification Examples
+
+**Try uploading photos of:**
+
+- Plastic bottles → Dry/Recyclable
+- Fresh fruits/vegetables → Wet/Biodegradable
+- Cardboard boxes → Dry/Recyclable
+- Glass bottles → Dry/Recyclable
+- Metal cans → Dry/Recyclable
+- Mobile phones/laptops → E-waste
+
+**Note:** Image classification works best with:
+- Clear, well-lit photos
+- Single object in focus
+- Minimal background clutter
+
+## Integration Details
+
+### Source Repository
+
+This implementation integrates the waste classification approach from [vatsalparikh07/garbage-classification-model](https://github.com/vatsalparikh07/garbage-classification-model).
+
+**Key Finding:** The source repository does **not** contain trained model weights. It only has training code and app structure.
+
+### Our Approach
+
+Since no trained model was available, we implemented:
+- InceptionV3 pre-trained on ImageNet (automatic download)
+- Intelligent mapping from ImageNet classes to waste categories
+- Transparent top-5 predictions
+- Graceful degradation when TensorFlow unavailable
+
+See [`docs/image_classification.md`](docs/image_classification.md) for complete technical details.
 
 ## Future scope
 
-- Add true image recognition for common household items
+- ✅ ~~Add true image recognition for common household items~~ (COMPLETED)
+- Fine-tune model on waste-specific datasets
+- Add support for multiple image uploads
 - Add user-friendly municipal rule mapping by ward or zone
 - Improve retrieval with FAISS or Chroma embeddings
 - Add multilingual support for Telugu and English
 - Extend the knowledge base with real GVMC and local authority documents
+- Collect user feedback for model improvement
 
 ## Demo instructions
 
-1. Run the app locally with `streamlit run app.py`.
-2. Enter one of the example waste items.
-3. Press Analyze waste.
-4. Review the category, recommendation, retrieved sources, and responsible-AI warning.
-5. If needed, test the demo mode by leaving the Granite environment variables unset.
+1. Run the app locally with `streamlit run app.py`
+2. **Option A:** Enter a waste item description (text)
+3. **Option B:** Upload an image of waste
+4. **Option C:** Use both text + image for verification
+5. Press "Analyze Waste"
+6. Review:
+   - Classification method (image/text)
+   - Detected item and category
+   - Confidence and reasoning
+   - Top predictions (for images)
+   - Disposal recommendation
+   - Retrieved source documents
+   - Responsible AI disclaimer
+
+## Testing
+
+### Test Image Classification
+
+```bash
+# Test with TensorFlow installed
+python -c "from src.image_classifier import is_available; print('Image classification:', 'Available' if is_available() else 'Unavailable')"
+
+# Test classification
+python -c "from src.image_classifier import classify_waste_image; from PIL import Image; result = classify_waste_image(Image.new('RGB', (299, 299))); print(result)"
+```
+
+### Test Text Classification
+
+```bash
+python -c "from src.classifier import classify_text_item; print(classify_text_item('plastic bottle'))"
+```
+
+## Troubleshooting
+
+### Image classification not working
+
+**Problem:** "Image classification unavailable" message
+
+**Solution:** Install TensorFlow:
+```bash
+pip install tensorflow>=2.13.0
+```
+
+Or for CPU-only (smaller):
+```bash
+pip install tensorflow-cpu>=2.13.0
+```
+
+### TensorFlow import errors
+
+**Problem:** Module not found or version conflicts
+
+**Solution:**
+- Ensure Python 3.8-3.11 (TensorFlow compatibility)
+- Update pip: `pip install --upgrade pip`
+- Reinstall: `pip uninstall tensorflow && pip install tensorflow>=2.13.0`
+
+### First run is slow
+
+**Problem:** Takes 10-30 seconds on first image classification
+
+**Solution:** This is normal. InceptionV3 weights are being downloaded and cached. Subsequent runs are faster.
+
+### Low confidence predictions
+
+**Solution:**
+- Use clearer, well-lit images
+- Focus on single object
+- Try different angles
+- Verify with text classification
+- Check top-5 predictions for alternatives
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Test your changes
+4. Submit a pull request
 
 ## Author and internship context
 
-This project is designed for the 1M1B AI for Sustainability Virtual Internship, with a focus on the SDG goals and a simple, local prototype suitable for a short demonstration. 
+This project is designed for the **1M1B AI for Sustainability Virtual Internship**, with a focus on SDG goals and practical waste management solutions for Vizag.
 
-Prepared by : V.Karthik
+**Prepared by:** V.Karthik
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Acknowledgments
+
+- Image classification approach inspired by [vatsalparikh07/garbage-classification-model](https://github.com/vatsalparikh07/garbage-classification-model)
+- InceptionV3 model by Google (via TensorFlow/Keras)
+- IBM Granite for LLM integration
+- Streamlit for rapid prototyping
