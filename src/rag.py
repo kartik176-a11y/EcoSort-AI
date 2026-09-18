@@ -1,64 +1,82 @@
-import os
 from pathlib import Path
+import re
 
-from src.classifier import classify_waste
-from src.granite import GraniteAdapter
-from src.rag import RAGPipeline
-
-
-def _safe_sources(sources):
-    if not sources:
-        return ["No source available in the current demo context."]
-    return sources
+try:
+    from pypdf import PdfReader
+except ImportError:  # Optional PDF support; text files still work without it.
+    PdfReader = None
 
 
-def run_waste_workflow(item: str, image_file=None, rag_pipeline: RAGPipeline = None):
-    if not item or not item.strip():
+UNAVAILABLE_GUIDANCE = (
+    "Reliable guidance was not found in the current knowledge base. "
+    "Please verify disposal instructions with the local municipal authority."
+)
+
+
+class RAGPipeline:
+    """Small offline retriever over .txt and, when available, .pdf files."""
+
+    def __init__(self, data_dir):
+        self.data_dir = Path(data_dir)
+        self.documents = self._load_documents()
+        self.chunks = self._make_chunks()
+
+    def _read_pdf(self, path):
+        if PdfReader is None:
+            return ""
+        try:
+            reader = PdfReader(str(path))
+            return "\n".join((page.extract_text() or "") for page in reader.pages)
+        except Exception:
+            return ""
+
+    def _load_documents(self):
+        documents = []
+        if not self.data_dir.is_dir():
+            return documents
+        for path in sorted(self.data_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            try:
+                if path.suffix.lower() == ".txt":
+                    text = path.read_text(encoding="utf-8", errors="ignore")
+                elif path.suffix.lower() == ".pdf":
+                    text = self._read_pdf(path)
+                else:
+                    continue
+            except OSError:
+                continue
+            if text and text.strip():
+                documents.append({"source": path.relative_to(self.data_dir.parent).as_posix(), "text": text})
+        return documents
+
+    def _make_chunks(self):
+        chunks = []
+        for document in self.documents:
+            pieces = re.split(r"\n\s*\n|\n(?=\[)", document["text"])
+            for piece in pieces:
+                text = re.sub(r"\s+", " ", piece).strip()
+                if text:
+                    chunks.append({"source": document["source"], "text": text})
+        return chunks
+
+    def retrieve(self, query, top_k=3):
+        words = set(re.findall(r"[a-z0-9]+", str(query or "").lower()))
+        words = {word for word in words if len(word) > 2}
+        if not words or not self.chunks:
+            return {"context": UNAVAILABLE_GUIDANCE, "sources": []}
+
+        scored = []
+        for chunk in self.chunks:
+            text = chunk["text"].lower()
+            score = sum(text.count(word) for word in words)
+            if score:
+                scored.append((score, chunk))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        selected = [chunk for _, chunk in scored[: max(1, int(top_k))]]
+        if not selected:
+            return {"context": UNAVAILABLE_GUIDANCE, "sources": []}
         return {
-            "detected_item": "Unknown",
-            "category": "Other/Uncertain",
-            "confidence": "Low",
-            "reason": "No item description was supplied.",
-            "recommendation": "Please enter a waste item or question.",
-            "grounded_guidance": "Reliable guidance was not found in the current knowledge base. Please verify disposal instructions with the local municipal authority.",
-            "sources": ["Local knowledge base unavailable"],
-            "retrieved_context": "No retrieval performed because the input was empty.",
-            "disclaimer": "The system should communicate uncertainty rather than confidently guessing.",
-            "demo_label": "Demo/reference mode",
+            "context": "\n\n".join(chunk["text"] for chunk in selected),
+            "sources": list(dict.fromkeys(chunk["source"] for chunk in selected)),
         }
-
-    classification = classify_waste(item, image_file)
-    rag = rag_pipeline or RAGPipeline(data_dir=Path(__file__).resolve().parent.parent / "data")
-    retrieval = rag.retrieve(item, top_k=3)
-
-    adapter = GraniteAdapter()
-    advisory = adapter.generate_advisory(
-        item=item,
-        category=classification["category"],
-        reason=classification["reason"],
-        context=retrieval["context"],
-        demo_mode=True,
-    )
-
-    if classification["category"] in ["Hazardous/Special waste", "E-waste"]:
-        disclaimer = "This item may require special handling. Do not place it in ordinary household waste. Verify with authorized local authorities or designated collection points."
-    elif classification["category"] == "Other/Uncertain":
-        disclaimer = "The item is uncertain. Please verify disposal instructions with the local municipal authority."
-    else:
-        disclaimer = "This guidance is designed to support civic awareness and should be checked against current local municipal instructions."
-
-    recommended_action = advisory["recommendation"]
-    source_list = _safe_sources(retrieval.get("sources", []))
-
-    return {
-        "detected_item": classification.get("detected_item", item),
-        "category": classification["category"],
-        "confidence": classification["confidence"],
-        "reason": classification["reason"],
-        "recommendation": recommended_action,
-        "grounded_guidance": advisory["answer"],
-        "sources": source_list,
-        "retrieved_context": retrieval["context"],
-        "disclaimer": disclaimer,
-        "demo_label": advisory.get("demo_label", "Demo/reference mode"),
-    }

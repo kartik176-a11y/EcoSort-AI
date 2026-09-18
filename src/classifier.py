@@ -1,48 +1,47 @@
 import re
 
-CATEGORY_DEFINITIONS = {
+
+CATEGORIES = {
     "Wet/Biodegradable": {
         "keywords": [
-            "banana peel", "food waste", "fruit peel", "vegetable waste", "leftover food",
-            "compost", "organic waste", "wet waste", "spoiled food", "garden waste"
+            "banana peel", "fruit peel", "food waste", "food leftovers", "leftover food",
+            "vegetable waste", "vegetable scrap", "organic waste", "wet waste", "compost",
+            "garden waste", "food scrap",
         ],
-        "reason": "This item is likely organic and suitable for composting or wet-waste streams.",
+        "reason": "The description matches organic material suitable for a wet-waste or composting stream.",
     },
     "Dry/Recyclable": {
         "keywords": [
-            "plastic bottle", "newspaper", "cardboard", "paper", "glass bottle", "metal can",
-            "tin can", "aluminium can", "plastic wrapper", "carton", "packaging"
+            "plastic bottle", "plastic wrapper", "newspaper", "cardboard box", "cardboard",
+            "paper", "glass bottle", "metal can", "tin can", "aluminium can", "carton",
         ],
-        "reason": "This item is likely dry waste or recyclable material that can be collected separately.",
-    },
-    "E-waste": {
-        "keywords": [
-            "old phone", "mobile phone", "laptop", "charger", "battery", "cable", "electronics",
-            "keyboard", "mouse", "pen drive", "usb cable", "headphones"
-        ],
-        "reason": "This item is electronic or contains electrical components that should not enter ordinary waste bins.",
+        "reason": "The description matches a dry material commonly separated for recycling.",
     },
     "Hazardous/Special waste": {
         "keywords": [
-            "used battery", "paint", "chemical", "bleach", "solvent", "motor oil",
-            "pesticide", "medication", "expired medicine", "spray can"
+            "used battery", "battery", "paint", "chemical", "bleach", "solvent", "motor oil",
+            "pesticide", "expired medicine", "medication", "spray can",
         ],
-        "reason": "This item may contain hazardous or toxic material and requires special handling.",
+        "reason": "The description matches potentially hazardous or special waste that needs separate handling.",
     },
-    "Other/Uncertain": {
-        "keywords": [],
-        "reason": "The item is ambiguous and may require local municipal verification before disposal.",
+    "E-waste": {
+        "keywords": [
+            "mobile phone", "cell phone", "smartphone", "old phone", "laptop", "computer",
+            "charger", "electronic", "electronics", "cable", "keyboard", "headphones", "mouse",
+            "pen drive",
+        ],
+        "reason": "The description matches an electrical or electronic item that should not enter ordinary waste.",
     },
 }
 
 
-def normalize_text(value: str) -> str:
-    return re.sub(r"[^a-z0-9\s]+", " ", (value or "").lower()).strip()
+def normalize_text(value):
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
 
 
-def classify_text_item(item_text: str) -> dict:
-    text = normalize_text(item_text)
-    if not text:
+def classify_text_item(item_text):
+    original = str(item_text or "").strip()
+    if not original:
         return {
             "category": "Other/Uncertain",
             "confidence": "Low",
@@ -50,22 +49,25 @@ def classify_text_item(item_text: str) -> dict:
             "detected_item": "Unknown",
         }
 
-    for category, config in CATEGORY_DEFINITIONS.items():
-        if category == "Other/Uncertain":
-            continue
-        for keyword in config["keywords"]:
-            if keyword in text:
-                confidence = "High" if len(keyword.split()) > 1 else "Medium"
-                return {
-                    "category": category,
-                    "confidence": confidence,
-                    "reason": config["reason"],
-                    "detected_item": item_text.strip(),
-                }
+    text = normalize_text(original)
+    matches = []
+    for category, definition in CATEGORIES.items():
+        for keyword in definition["keywords"]:
+            if normalize_text(keyword) in text:
+                matches.append((len(normalize_text(keyword)), category, keyword, definition["reason"]))
 
+    if not matches:
+        return {
+            "category": "Other/Uncertain",
+            "confidence": "Low",
+            "reason": "No reliable match was found for the supplied description.",
+            "detected_item": original,
+        }
+
+    _, category, keyword, reason = max(matches, key=lambda match: match[0])
     return {
-        "category": "Other/Uncertain",
-        "confidence": "Low",
-        "reason": "No reliable match was found for the supplied description.",
-        "detected_item": item_text.strip(),
+        "category": category,
+        "confidence": "High" if len(keyword.split()) > 1 else "Medium",
+        "reason": reason,
+        "detected_item": original,
     }

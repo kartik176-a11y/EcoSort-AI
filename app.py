@@ -1,5 +1,5 @@
-import os
 from pathlib import Path
+import os
 
 import streamlit as st
 
@@ -8,121 +8,86 @@ from src.rag import RAGPipeline
 
 st.set_page_config(page_title="EcoSort AI ♻️", page_icon="♻️", layout="wide")
 
+DATA_DIR = Path(__file__).resolve().parent / "data"
 
-def build_sidebar():
+
+@st.cache_resource
+def get_rag_pipeline():
+    return RAGPipeline(DATA_DIR)
+
+
+def render_sidebar():
     with st.sidebar:
-        st.image("https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=1200&q=80", use_container_width=True)
-        st.markdown("### EcoSort AI")
-        st.markdown("Smart Waste Segregation Assistant for Sustainable Vizag")
-        st.caption("SDG 11 • SDG 12")
+        st.markdown("## EcoSort AI ♻️")
+        st.caption("Smart Waste Segregation Assistant for Sustainable Vizag")
+        st.markdown("**SDG 11:** Sustainable Cities and Communities  \n**SDG 12:** Responsible Consumption and Production")
         if os.getenv("IBM_GRANITE_ENDPOINT") and os.getenv("IBM_API_KEY"):
-            st.success("Granite/LLM configured")
+            st.success("Granite mode configured")
         else:
-            st.info("Demo mode active — using local grounded fallback")
+            st.info("Demo mode: local fallback active")
         st.markdown("---")
         st.markdown("### Responsible AI")
-        st.caption("AI guidance is for support only and must be checked against official local rules for special waste.")
+        st.caption("Guidance is informational. Verify special or hazardous waste instructions with authorized local authorities.")
 
 
-if "rag_pipeline" not in st.session_state:
-    st.session_state.rag_pipeline = RAGPipeline(data_dir=Path(__file__).resolve().parent / "data")
+def render_result(result):
+    st.markdown("---")
+    st.subheader("Analysis result")
+    left, right = st.columns(2)
+    with left:
+        st.metric("Waste category", result["category"])
+        st.write(f"**Detected item:** {result['detected_item']}")
+        st.write(f"**Confidence:** {result['confidence']}")
+        st.write(f"**Reason:** {result['reason']}")
+    with right:
+        st.success(f"**Disposal recommendation**\n\n{result['recommendation']}")
+        st.info(f"**Grounded guidance**\n\n{result['grounded_guidance']}")
 
-build_sidebar()
+    st.markdown("**Source documents**")
+    for source in result.get("sources", []):
+        st.write(f"- {source}")
 
+    if result.get("disclaimer"):
+        st.warning(result["disclaimer"])
+    if result.get("demo_label"):
+        st.caption(result["demo_label"])
+    with st.expander("Retrieval context used"):
+        st.write(result["retrieved_context"])
+
+
+render_sidebar()
 st.title("EcoSort AI ♻️")
 st.subheader("Smart Waste Segregation Assistant for Sustainable Vizag")
-st.caption("A simple RAG-grounded prototype for household waste categorization and disposal guidance.")
+st.write("Identify a household waste item, retrieve relevant local guidance, and receive a concise source-grounded recommendation.")
 
-with st.container():
-    st.markdown(
-        "This prototype helps identify common household waste, assigns a likely segregation category, retrieves official guidance, and produces a concise recommendation grounded in the current knowledge base."
-    )
-
-col1, col2 = st.columns([1.5, 1])
-
-with col1:
-    st.markdown("### Check a waste item")
-    item_text = st.text_input(
-        "Enter the item or question",
-        value="banana peel",
-        placeholder="Try: banana peel, plastic bottle, newspaper, used battery",
-    )
-
-    uploaded_file = st.file_uploader(
-        "Optional: upload a waste image",
+left, right = st.columns([1.6, 1])
+with left:
+    item = st.text_input("Enter a waste item or question", placeholder="Try: banana peel, plastic bottle, used battery")
+    image_file = st.file_uploader(
+        "Optional image upload (preview only; no computer vision is performed)",
         type=["png", "jpg", "jpeg", "webp"],
-        help="The image is used only for local preview; it is not stored by default."
     )
+    if image_file is not None:
+        st.image(image_file, caption="Preview only — the image is not stored by this app.", use_container_width=True)
+    analyze = st.button("Analyze Waste", type="primary", use_container_width=True)
 
-    if uploaded_file is not None:
-        st.image(uploaded_file, caption=f"Uploaded: {uploaded_file.name}", use_container_width=True)
-
-    submit = st.button("Analyze waste", type="primary", use_container_width=True)
-
-with col2:
+with right:
     st.markdown("### Demo examples")
-    examples = [
-        "banana peel",
-        "plastic bottle",
-        "newspaper",
-        "used battery",
-        "food leftovers",
-        "cardboard box",
-    ]
-    for example in examples:
-        st.code(example)
+    st.markdown("banana peel  \nplastic bottle  \nnewspaper  \nused battery  \nfood leftovers  \ncardboard box")
 
-result_container = st.container()
-
-if submit:
-    if not item_text.strip():
-        st.warning("Please enter a waste item or question before analyzing.")
+if analyze:
+    if not item.strip():
+        st.warning("Please enter a waste item or question.")
     else:
-        result = run_waste_workflow(
-            item=item_text.strip(),
-            image_file=uploaded_file,
-            rag_pipeline=st.session_state.rag_pipeline,
-        )
-        with result_container:
-            st.markdown("---")
-            st.markdown("### Result")
-            st.markdown(f"**Detected / identified item:** {result['detected_item']}")
-            st.markdown(f"**Waste category:** {result['category']}")
-            st.markdown(f"**Confidence:** {result['confidence']}")
-            st.markdown(f"**Reason:** {result['reason']}")
-            st.markdown(f"**Disposal recommendation:** {result['recommendation']}")
-
-            if result.get("sources"):
-                st.markdown("**Source documents:**")
-                for source in result["sources"]:
-                    st.markdown(f"- {source}")
-
-            st.markdown("**Grounded guidance:**")
-            st.info(result["grounded_guidance"])
-
-            if result.get("disclaimer"):
-                st.warning(result["disclaimer"])
-
-            if result.get("demo_label"):
-                st.caption(result["demo_label"])
-
-            with st.expander("Retrieval context used"):
-                st.write(result["retrieved_context"])
+        render_result(run_waste_workflow(item, image_file=image_file, rag_pipeline=get_rag_pipeline()))
 
 st.markdown("---")
-
-st.markdown("### Responsible AI")
+st.subheader("Responsible AI")
 st.markdown(
     "- AI guidance does not replace official municipal instructions.\n"
-    "- The response is grounded in retrieved sources shown in the app.\n"
-    "- Special or hazardous waste should be checked with authorized local authorities.\n"
-    "- No unnecessary personal information is collected or stored.\n"
-    "- Uploaded images are not retained by default.\n"
-    "- Uncertain waste categories are reported as uncertain rather than guessed.\n"
-    "- If reliable guidance is unavailable, the app clearly states it."
-)
-
-st.markdown("### Data / knowledge basis")
-st.markdown(
-    "The application uses a local knowledge base based on official waste-management themes, GVMC-style guidance, and Swachh Bharat material, with a demo fallback when external APIs are unavailable."
+    "- Recommendations use retrieved knowledge-base context when available.\n"
+    "- The system does not invent municipal rules and reports uncertainty.\n"
+    "- Special, hazardous, battery, and e-waste instructions must be verified locally.\n"
+    "- No unnecessary personal information is collected.\n"
+    "- Uploaded images are preview-only and are not permanently stored by default."
 )
