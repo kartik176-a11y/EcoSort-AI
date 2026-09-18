@@ -1,5 +1,4 @@
-# :
-🌱 ♻️ EcoSort AI 🌍 : AI — Smart Waste Segregation & Disposal Assistant
+# :🌱 ♻️ EcoSort AI 🌍 : AI — Smart Waste Segregation & Disposal Assistant
 
 ## Problem statement
 
