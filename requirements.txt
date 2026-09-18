@@ -1,3 +1,20 @@
+# Core Dependencies
 streamlit>=1.36.0
 requests>=2.31.0
 pypdf>=4.2.0
+
+# Image Processing
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Machine Learning (Optional - for image classification)
+# Uncomment below to enable real image classification:
+# tensorflow>=2.15.0
+# OR for lighter installation:
+# tensorflow-cpu>=2.15.0
+
+# Note: TensorFlow is optional. The app works without it using text classification only.
+# To enable image classification:
+# 1. Uncomment tensorflow or tensorflow-cpu above
+# 2. Run: pip install -r requirements.txt
+# 3. Train the model or add pre-trained weights to models/waste_classifier.h5
