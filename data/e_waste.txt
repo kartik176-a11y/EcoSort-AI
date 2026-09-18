@@ -1,0 +1,93 @@
+# E-Waste (Electronic Waste) Guidance
+
+[Overview]
+E-waste refers to discarded electrical and electronic equipment. These items contain valuable materials that can be recovered and hazardous substances that require proper disposal.
+
+[Common E-Waste Items]
+
+**Consumer Electronics:**
+- Mobile phones and smartphones
+- Tablets and e-readers
+- Laptops and desktop computers
+- Computer monitors and displays
+- Keyboards, mice, webcams
+
+**Entertainment Devices:**
+- Televisions (LED, LCD, CRT)
+- DVD/Blu-ray players
+- Gaming consoles
+- Audio equipment and speakers
+- Remote controls
+
+**Small Electronics:**
+- Chargers and power adapters
+- USB cables and cords
+- Headphones and earbuds
+- Computer hard drives and memory
+- Printers and scanners
+
+**Household Electronics:**
+- Small kitchen appliances (when electronic)
+- Digital cameras
+- Calculators
+- Electronic toys
+
+[Why E-Waste is Special]
+
+**Valuable Materials:**
+E-waste contains recoverable materials like gold, silver, copper, aluminum, and rare earth elements. Proper recycling recovers these resources.
+
+**Hazardous Substances:**
+Electronic devices may contain lead, mercury, cadmium, flame retardants, and other toxic materials that can harm the environment and human health if not properly managed.
+
+[Proper Disposal]
+
+**DO NOT:**
+- Throw in regular trash bins
+- Burn electronic waste
+- Dismantle devices yourself (risk of exposure to hazardous materials)
+- Mix with other waste types
+
+**DO:**
+- Use authorized e-waste collection centers
+- Check manufacturer take-back programs
+- Participate in e-waste collection drives
+- Remove personal data before disposal (factory reset for phones/computers)
+- Keep accessories together when possible
+
+[Data Security]
+Before disposing of computers, phones, tablets, or storage devices:
+- Backup important data
+- Perform factory reset or secure wipe
+- Remove SIM cards and memory cards
+- Sign out of all accounts
+
+[E-Waste Collection in Vizag]
+Greater Visakhapatnam Municipal Corporation (GVMC) and various organizations conduct e-waste collection drives periodically. Options include:
+- Municipal e-waste collection events
+- Authorized e-waste recyclers
+- Manufacturer and retailer take-back programs
+- NGO collection initiatives
+
+Contact GVMC or check local announcements for upcoming collection drives.
+
+[Environmental Benefits]
+Proper e-waste recycling:
+- Recovers valuable materials
+- Reduces mining for virgin resources
+- Prevents soil and water contamination
+- Reduces greenhouse gas emissions
+- Creates green jobs
+
+[Repair and Reuse]
+Before discarding electronics:
+- Consider repair options
+- Donate working devices to schools, NGOs, or those in need
+- Sell or trade-in functional devices
+- Extend product life through proper maintenance
+
+[India E-Waste Rules]
+India has E-Waste (Management) Rules under the Ministry of Environment, Forest and Climate Change. Manufacturers, producers, and bulk consumers have responsibilities for collection and recycling.
+
+[Important]
+E-waste should NEVER go into ordinary household bins. Always use authorized channels for disposal.
